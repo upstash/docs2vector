@@ -68,7 +68,7 @@ npm install
 GITHUB_TOKEN=your_github_token
 UPSTASH_VECTOR_REST_URL=your_upstash_vector_url
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
-OPENAI_API_KEY=your_openai_api_key  # Optional - if not provided, will use Upstash built-in embedding
+OPENAI_API_KEY=your_openai_api_key  # Optional - if not provided, will use Upstash embeddings
 ```
 
 ## Usage

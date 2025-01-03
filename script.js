@@ -1,12 +1,18 @@
-// Import required dependencies
 import dotenv from 'dotenv';
 import { Octokit } from '@octokit/rest';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { UpstashVectorStore } from '@langchain/community/vectorstores/upstash';
-import { OpenAIEmbeddings } from '@langchain/openai';
-import fs from 'fs/promises';
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { Document } from "@langchain/core/documents";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import { Index } from '@upstash/vector';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { simpleGit } from 'simple-git';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+
+// ES modules fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -16,20 +22,32 @@ const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN
 });
 
-const embeddings = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPENAI_API_KEY
-});
+// Initialize OpenAI embeddings if API key is provided
+const useOpenAI = !!process.env.OPENAI_API_KEY;
+let embeddings;
+if (useOpenAI) {
+    embeddings = new OpenAIEmbeddings({
+        openAIApiKey: process.env.OPENAI_API_KEY
+    });
+}
 
-const vectorStore = new UpstashVectorStore(embeddings, {
+// Initialize Upstash Vector index
+const index = new Index({
     url: process.env.UPSTASH_VECTOR_REST_URL,
-    token: process.env.UPSTASH_VECTOR_REST_TOKEN
+    token: process.env.UPSTASH_VECTOR_REST_TOKEN,
 });
 
 // Text splitter configuration
 const textSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000,
-    chunkOverlap: 200
+    chunkOverlap: 200,
+    separators: ["\n\n", "\n", " ", ""],
 });
+
+// Generate a unique ID for each chunk
+function generateId(content) {
+    return crypto.createHash('md5').update(content).digest('hex');
+}
 
 async function cloneRepository(repoUrl) {
     const tempDir = path.join(process.cwd(), 'temp_repo');
@@ -70,16 +88,36 @@ async function processFile(filePath) {
     const content = await fs.readFile(filePath, 'utf-8');
     const relativePath = path.relative(process.cwd(), filePath);
 
-    // Split the content into chunks
-    const chunks = await textSplitter.createDocuments([content], [{ source: relativePath }]);
+    // Create a Document object and split it into chunks
+    const doc = new Document({ pageContent: content });
+    const chunks = await textSplitter.splitDocuments([doc]);
 
-    // Add metadata to each chunk
-    const processedChunks = chunks.map(chunk => ({
-        ...chunk,
-        metadata: {
-            ...chunk.metadata,
-            fileName: path.basename(filePath),
-            fileType: path.extname(filePath).substring(1)
+    // Convert chunks to Upstash Vector format
+    const processedChunks = await Promise.all(chunks.map(async chunk => {
+        const base = {
+            id: generateId(chunk.pageContent),
+            metadata: {
+                fileName: path.basename(filePath),
+                filePath: relativePath,
+                fileType: path.extname(filePath).substring(1),
+                timestamp: new Date().getTime()
+            }
+        };
+
+        if (useOpenAI) {
+            // Generate embeddings using OpenAI
+            const [vector] = await embeddings.embedDocuments([chunk.pageContent]);
+            return {
+                ...base,
+                vector,
+                data: chunk.pageContent
+            };
+        } else {
+            // Use Upstash's built-in embeddings
+            return {
+                ...base,
+                data: chunk.pageContent
+            };
         }
     }));
 
@@ -95,6 +133,11 @@ async function main() {
         }
 
         console.log(`Processing repository: ${repoUrl}`);
+        console.log(`Using ${useOpenAI ? 'OpenAI' : 'Upstash'} embeddings`);
+
+        // Create namespace for this repository
+        const repoName = repoUrl.split('/').pop().replace('.git', '');
+        console.log(`Using namespace: ${repoName}`);
 
         // Clone the repository
         const repoDir = await cloneRepository(repoUrl);
@@ -114,11 +157,22 @@ async function main() {
 
         // Store chunks in Upstash Vector
         console.log(`Storing ${allChunks.length} chunks in Upstash Vector`);
-        await vectorStore.addDocuments(allChunks);
+
+        // Use batching to avoid rate limits
+        const batchSize = 100;
+        for (let i = 0; i < allChunks.length; i += batchSize) {
+            const batch = allChunks.slice(i, i + batchSize);
+            await index.upsert(batch, { namespace: repoName });
+            console.log(`Processed batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(allChunks.length/batchSize)}`);
+        }
 
         // Clean up
         await fs.rm(repoDir, { recursive: true, force: true });
         console.log('Processing completed successfully');
+
+        // Print some information about the index
+        const info = await index.info();
+        console.log('Index information:', info);
 
     } catch (error) {
         console.error('Error:', error.message);
