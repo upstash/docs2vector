@@ -34,15 +34,7 @@ A Node.js tool that automatically processes Markdown files from any GitHub repos
    - `repo` (Full control of private repositories)
    - `read:org` (Read organization data)
 7. Click `Generate token`
-8. **Important**: Copy the token immediately and store it securely. You won't be able to see it again!
-
-Note: If you're only accessing public repositories, you can create a token with just the `public_repo` scope instead of the full `repo` scope.
-
-For security best practices:
-- Never commit your token to version control
-- Use environment variables or secure secret management
-- Set an expiration date for your token
-- Only grant the minimum required permissions
+8. Copy the token.
 
 </details>
 
@@ -101,8 +93,9 @@ The tool supports two embedding providers:
 1. OpenAI Embeddings (default if API key is provided)
    - Requires `OPENAI_API_KEY` in `.env`
    - Uses OpenAI's text-embedding-ada-002 model
+   - Choose 1536 as dimension while creating vector index
 
-2. Upstash Embeddings (used when OpenAI API key is not provided)
+2. Upstash Embeddings (used when OpenAI API key is NOT provided)
    - No additional configuration needed
    - Uses Upstash's built-in embedding service
 
@@ -146,7 +139,6 @@ Feel free to submit issues and enhancement requests!
 
 MIT License - feel free to use this tool for any purpose.
 
-## Credits
 
 This tool uses the following open-source packages:
 - LangChain: Document processing and vector store integration
