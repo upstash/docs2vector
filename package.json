@@ -1,11 +1,15 @@
 {
-  "name": "github-docs-vectorizer",
-  "type": "module",
-  "version": "1.0.0",
+  "name": "@upstash/docs2vector",
+  "version": "1.0.2",
   "description": "A tool to process markdown files from GitHub repositories and store them in Upstash Vector",
-  "main": "script.js",
+  "main": "index.js",
+  "type": "module",
+  "files": [
+    "lib",
+    "index.js"
+  ],
   "scripts": {
-    "start": "node script.js"
+    "start": "node index.js"
   },
   "keywords": [
     "github",
@@ -16,10 +20,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@langchain/core": "0.2.21",
     "@langchain/openai": "0.0.14",
     "@octokit/rest": "20.0.2",
+    "@upstash/docs2vector": "^1.0.0",
     "@upstash/vector": "^1.0.4",
     "dotenv": "16.4.1",
     "langchain": "0.3.9",

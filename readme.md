@@ -1,24 +1,19 @@
 # GitHub Docs Vectorizer
 
-A Node.js tool that automatically processes Markdown files from any GitHub repository and stores them in Upstash Vector database for efficient similarity search and retrieval. This tool is particularly useful for creating document search systems, knowledge bases, or AI-powered documentation assistants.
+A Node.js tool to process Markdown files from GitHub repositories, generate embeddings, and store them in Upstash Vector database. Perfect for building document search systems, AI-driven documentation assistants, or knowledge bases.
 
 ## Features
-
-- Clones any GitHub repository
-- Recursively finds all Markdown (`.md`) and MDX (`.mdx`) files
-- Chunks documents using LangChain's text splitter for optimal processing
+- Recursively find all Markdown (`.md`) and MDX (`.mdx`) files in any GitHub repository
+- Chunk documents using LangChain's RecursiveCharacterTextSplitter for better text segmentation
 - Supports both OpenAI and Upstash embeddings
-- Stores document chunks with metadata in Upstash Vector
-- Handles cleanup automatically
-- Preserves file metadata for better context during retrieval
+- Stores document chunks and metadata in Upstash Vector for enhanced retrieval
 
 ## Prerequisites
-
 - Node.js (v16 or higher)
-- NPM or Yarn
-- GitHub access token (for repository access)
-- Upstash Vector database account
-- (Optional) OpenAI API key
+- NPM or Yarn for package management
+- GitHub personal access token (required for repository access)
+- Upstash Vector database account (to store vectors)
+- OpenAI API key (optional, for generating embeddings)
 
 ## How to Find Your GitHub Token
 
@@ -34,52 +29,48 @@ A Node.js tool that automatically processes Markdown files from any GitHub repos
    - `repo` (Full control of private repositories)
    - `read:org` (Read organization data)
 7. Click `Generate token`
-8. **Important**: Copy the token immediately and store it securely. You won't be able to see it again!
-
-Note: If you're only accessing public repositories, you can create a token with just the `public_repo` scope instead of the full `repo` scope.
-
-For security best practices:
-- Never commit your token to version control
-- Use environment variables or secure secret management
-- Set an expiration date for your token
-- Only grant the minimum required permissions
-
 </details>
 
-## Installation
+## Installation Guide
 
-1. Clone this repository or create a new directory:
+1. Clone the repository or create a new directory:
 ```bash
 mkdir github-docs-vectorizer
 cd github-docs-vectorizer
 ```
 
-2. Copy the provided files:
-   - `script.js`: Main processing script
-   - `package.json`: Dependencies configuration
+2. Ensure the following files are included in your directory:
+   - `script.js`: The main script for processing
+   - `package.json`: Manages project dependencies
+   - `.env`: Contains your environment variables (explained below)
 
 3. Install dependencies:
 ```bash
-npm install
+npm install @upstash/docs2vector
 ```
 
-4. Create a `.env` file in the root directory with your credentials:
+4. Set up a `.env` file in the root directory of your project with your credentials:
 ```env
+# Required for accessing GitHub repositories
 GITHUB_TOKEN=your_github_token
+
+# Required for storing vectors in Upstash
 UPSTASH_VECTOR_REST_URL=your_upstash_vector_url
 UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
-OPENAI_API_KEY=your_openai_api_key  # Optional - if not provided, will use Upstash embeddings
+
+# Optional: Provide if using OpenAI embeddings
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 ## Usage
 
-Run the script with a GitHub repository URL as an argument:
+Run the script by providing the GitHub repository URL as an argument:
 
 ```bash
 node script.js https://github.com/username/repository
 ```
 
-For example:
+Example:
 ```bash
 node script.js https://github.com/facebook/react
 ```
@@ -96,7 +87,7 @@ The script will:
 
 ### Embedding Options
 
-The tool supports two embedding providers:
+### Supported Embedding Providers
 
 1. OpenAI Embeddings (default if API key is provided)
    - Requires `OPENAI_API_KEY` in `.env`
@@ -106,9 +97,9 @@ The tool supports two embedding providers:
    - No additional configuration needed
    - Uses Upstash's built-in embedding service
 
-### Chunking Configuration
+### Customizing Document Chunking
 
-You can modify the text splitting configuration in `script.js`:
+To adjust how documents are split into chunks, you can update the configuration in `script.js`:
 
 ```javascript
 const textSplitter = new RecursiveCharacterTextSplitter({
@@ -117,23 +108,62 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 });
 ```
 
+## SDK
+
+```shell
+npm install @upstash/docs2vector dotenv
+```
+
+```javascript
+import dotenv from 'dotenv';
+import Docs2Vector from "@upstash/docs2vector";
+
+// Load environment variables
+dotenv.config();
+
+async function main() {
+    try {
+        // Step 1: Define the GitHub repository URL
+        const githubRepoUrl = 'YOUR_GITHUB_URL';
+
+        // Print start message
+        console.log(`Starting processing for the repository: ${githubRepoUrl}`);
+
+        // Step 2: Initialize the Docs2Vector SDK
+        const converter = new Docs2Vector();
+
+        // Step 3: Run the processing flow with Docs2Vector's `run` method
+        await converter.run(githubRepoUrl);
+
+        // Print success message
+        console.log(`Successfully processed repository: ${githubRepoUrl}`);
+        console.log('Vectors stored in Upstash Vector database.');
+    } catch (error) {
+        console.error('An error occurred while processing the repository:', error.message);
+    }
+}
+
+main();
+```
+
+
 ## Metadata
 
-Each stored chunk includes the following metadata:
-- Source file name
-- File type (md/mdx)
-- Relative path in the repository
-- Original chunk location
+Metadata accompanies each stored chunk for improved context:
+- Original file name
+- File type (Markdown or MDX)
+- Relative file path in the repository
+- Document source for the specific chunk of text
 
 ## Error Handling
-
-The script includes error handling for common scenarios:
-- Invalid repository URLs
-- Missing credentials
-- File access issues
+The script is designed to handle errors gracefully in the following cases:
+- Invalid repository URLs provided
+- Missing or incorrect credentials
+- Unable to access or read the required files
+- Connectivity or network-related problems
 - Network problems
 
-If any error occurs, the script will:
+In case of errors, the script will:
 1. Log the error message
 2. Clean up any temporary files
 3. Exit with a non-zero status code
@@ -149,7 +179,7 @@ MIT License - feel free to use this tool for any purpose.
 ## Credits
 
 This tool uses the following open-source packages:
-- LangChain: Document processing and vector store integration
-- Octokit: GitHub API interactions
-- simple-git: Git repository operations
-- Upstash Vector: Vector database storage
+- **LangChain**: Handles document processing and vector store integration
+- **Octokit**: Facilitates interactions with the GitHub API
+- **simple-git**: Manages operations on Git repositories
+- **Upstash Vector**: Enables seamless storage and retrieval of document vectors
