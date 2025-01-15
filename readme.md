@@ -1,16 +1,15 @@
 # GitHub Docs Vectorizer
 
-A Node.js tool to process Markdown files from GitHub repositories, generate embeddings, and store them in Upstash Vector database. Perfect for building document search systems, AI-driven documentation assistants, or knowledge bases.
+This tool processes Markdown files of you GitHub documentation repo, and insert them into Upstash Vector database. So you can build document search systems, AI-driven documentation assistants, or knowledge bases.
 
 ## Features
 - Recursively find all Markdown (`.md`) and MDX (`.mdx`) files in any GitHub repository
-- Chunk documents using LangChain's RecursiveCharacterTextSplitter for better text segmentation
+- Chunk documents using LangChain's RecursiveCharacterTextSplitter
 - Supports both OpenAI and Upstash embeddings
-- Stores document chunks and metadata in Upstash Vector for enhanced retrieval
+- Stores document chunks and metadata in Upstash Vector for semantic retrieval
 
 ## Prerequisites
 - Node.js (v16 or higher)
-- NPM or Yarn for package management
 - GitHub personal access token (required for repository access)
 - Upstash Vector database account (to store vectors)
 - OpenAI API key (optional, for generating embeddings)
@@ -46,7 +45,7 @@ cd github-docs-vectorizer
 
 3. Install dependencies:
 ```bash
-npm install @upstash/docs2vector
+npm install
 ```
 
 4. Set up a `.env` file in the root directory of your project with your credentials:
@@ -92,10 +91,12 @@ The script will:
 1. OpenAI Embeddings (default if API key is provided)
    - Requires `OPENAI_API_KEY` in `.env`
    - Uses OpenAI's text-embedding-ada-002 model
+   - You need to choose `custom` as embedding model while creating Vector Index
 
 2. Upstash Embeddings (used when OpenAI API key is not provided)
    - No additional configuration needed
    - Uses Upstash's built-in embedding service
+   - You need to choose an embedding model while creating Vector Index 
 
 ### Customizing Document Chunking
 
@@ -109,6 +110,8 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 ```
 
 ## SDK
+
+Use the SDK to trigger the functionality programmatically.
 
 ```shell
 npm install @upstash/docs2vector dotenv
