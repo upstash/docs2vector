@@ -44,12 +44,8 @@ cd github-docs-vectorizer
    - `package.json`: Manages project dependencies
    - `.env`: Contains your environment variables (explained below)
 
-3. Install dependencies:
-```bash
-npm install @upstash/docs2vector
-```
 
-4. Set up a `.env` file in the root directory of your project with your credentials:
+3. Set up a `.env` file in the root directory of your project with your credentials:
 ```env
 # Required for accessing GitHub repositories
 GITHUB_TOKEN=your_github_token
@@ -62,9 +58,9 @@ UPSTASH_VECTOR_REST_TOKEN=your_upstash_vector_token
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-## Usage
 
-Run the script by providing the GitHub repository URL as an argument:
+
+4. Run the script by providing the GitHub repository URL as an argument:
 
 ```bash
 node script.js https://github.com/username/repository
