@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function main() {
+    console.time('Processing Time');
     try {
         // Step 1: Define the GitHub repository URL
         const githubRepoUrl = 'https://github.com/upstash/docs2vector';
@@ -21,7 +22,9 @@ async function main() {
         // Print success message
         console.log(`Successfully processed repository: ${githubRepoUrl}`);
         console.log('Vectors stored in Upstash Vector database.');
+        console.timeEnd('Processing Time');
     } catch (error) {
+        console.timeEnd('Processing Time');
         console.error('An error occurred while processing the repository:', error.message);
     }
 }
